@@ -15,4 +15,10 @@ Create a jar that you can use with other projects with:
 ant dist
 ```
 
+Create java doc with:
+
+```
+ant doc
+```
+
 profit.
