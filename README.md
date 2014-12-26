@@ -54,5 +54,5 @@ rostopic echo /bridge
 The RosTest code also has some commented code that demonstrates how you subscribe to topics over ROSbridge. The commented out code assumes the ROS message type: "burlap_msgs/burlap_state" change that as needed. It will simply print the JSON string it receives every time it receives an update from the server.
 
 
-As the RosTest code illustrates the main object you work with is the RosBridge class in the ros package. This package receives publish and subscribe requests. Publish requests automatically advertise the publish if it has not yet already been advertised. Subscribe requests take a RosListenDelegate object (interface defined in the ros package) which is an object which is passed the data sent from ROS bridge for specific topics to which you subscribed.
+As the RosTest code illustrates the main object you work with is the RosBridge class in the ros package. This package receives publish and subscribe requests. Publish requests automatically advertise the publish topic if it has not yet already been advertised. Subscribe requests take a RosListenDelegate object (interface defined in the ros package) which is an object which is passed the data sent from ROS bridge for specific topics to which you subscribed.
 
