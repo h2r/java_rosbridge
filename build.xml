@@ -43,6 +43,22 @@
     	 <fileset dir="${src}"/>
     </jar>
   </target>
+
+ <target name="dist_all" depends="compile"
+        description="generate the distribution" >
+    <!-- Create the distribution directory -->
+    <mkdir dir="${dist}"/>
+
+    <!-- Put everything in ${build} into the jar file -->
+    <jar jarfile="${dist}/java_rosbridge_all.jar">
+       <fileset dir="${build}"/>
+       <fileset dir="${src}"/>
+       <zipgroupfileset dir="${lib}">
+            <include name="**/*.jar"/>
+       </zipgroupfileset>
+    </jar>
+  </target>
+
   <target name="doc" depends="init" description="generate documentation">
   	<mkdir dir="${doc}"/>
     <javadoc sourcepath="${src}" destdir="${doc}"/>
