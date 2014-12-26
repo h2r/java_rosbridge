@@ -34,6 +34,9 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
  * to the subscribed topic.
  * <br/>
  * Publishing is also supported with the {@link #publish(String, String, Object)} method.
+ * <br/>
+ * To create and connect to rosbridge, use the {@link #createConnection(String)} method.
+ * Note that rosbridge by default uses port 9090. An example URI to provide as a parameter is: ws://localhost:9090
  * @author James MacGlashan.
  */
 @WebSocket(maxTextMessageSize = 64 * 1024)
@@ -52,7 +55,7 @@ public class RosBridge {
 	 * Creates a connection to the rosbridge websocket server located at rosBridgeURI.
 	 * Note that it is recommend that you call the {@link #waitForConnection()} method
 	 * before publishing or subcribing.
-	 * @param rosBridgeURI the URI to the rosbridge websocket server
+	 * @param rosBridgeURI the URI to the rosbridge websocket server. Note that rosbridge by default uses port 9090. An example URI is: ws://localhost:9090
 	 * @return the RosBride socket that is connected to the indicated server.
 	 */
 	public static RosBridge createConnection(String rosBridgeURI){
