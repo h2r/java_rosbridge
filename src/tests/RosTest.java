@@ -7,13 +7,20 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Example of connecting to rosbridge with publish/subscribe messages.
+ * Example of connecting to rosbridge with publish/subscribe messages. Takes one argument:
+ * the rosbridge websocket URI; for example: ws://localhost:9090.
  * @author James MacGlashan.
  */
 public class RosTest {
 
 	public static void main(String[] args) {
-		RosBridge bridge = RosBridge.createConnection("ws://chelone:9090");
+
+		if(args.length != 1){
+			System.out.println("Need the rosbridge websocket URI provided as argument. For example:\n\tws://localhost:9090");
+			System.exit(0);
+		}
+
+		RosBridge bridge = RosBridge.createConnection(args[0]);
 		bridge.waitForConnection();
 
 		/*
