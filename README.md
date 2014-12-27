@@ -1,7 +1,7 @@
 java_rosbridge
 ==============
 
-A simple library using Jetty 9 to connect Java to a ROS Bridge server. Supports publishing and subscribing with different topic delegates.
+A simple library using Jetty 9 to connect Java code to a [ROS Bridge server](http://wiki.ros.org/rosbridge_suite/). This library supports publishing and subscribing with different topic delegates and makes using Java code with ROS very trivial (we argue that it is easier than using ROSJava which has a number of complications and complexities).
 
 ## Compiling
 
@@ -53,7 +53,7 @@ Connection closed: 1000 - I'm done
 
 ### ROS Bridge test code
 
-The RosTest code in the `tests` package provides a demonstration of connecting to ROSBridge and publishing the string `hello from java` to the ROS topic `/bridge` every 500 ms. The code takes as a command line argument the URI to the ROS Bridge server. Note that ROSBridge by default runs on port 9090. An example URI is `ws://localhost:9090`. Obviously, you should launch ROS Bridge on the server before running this example code. (That is, before running the RosTest class, run `roslaunch rosbridge_server rosbridge_websocket.launch` on the ROS server. For more information on getting and starting ROS Bridge on your ROS server, see [here](http://wiki.ros.org/rosbridge_suite/Tutorials/RunningRosbridge).) To observe the Java publishing over ROS Bridge on the actual ROS Bridge server, run the ROS command
+The RosTest code in the `tests` package provides a demonstration of connecting to ROSBridge and publishing the string `hello from java` to the ROS topic `/bridge` every 500 ms. The code takes as a command line argument the URI to the ROS Bridge server. Note that ROSBridge by default runs on port 9090. An example URI is `ws://localhost:9090`. Obviously, you should launch ROS Bridge on the server before running this example code. (That is, before running the `RosTest` class, run `roslaunch rosbridge_server rosbridge_websocket.launch` on the ROS server. For more information on getting and starting ROS Bridge on your ROS server, see [here](http://wiki.ros.org/rosbridge_suite/Tutorials/RunningRosbridge).) To observe the Java publishing over ROS Bridge on the actual ROS Bridge server, run the ROS command
 
 ```
 rostopic echo /bridge
