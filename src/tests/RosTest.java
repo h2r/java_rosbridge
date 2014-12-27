@@ -1,5 +1,6 @@
 package tests;
 
+import ros.Publisher;
 import ros.RosBridge;
 import ros.RosListenDelegate;
 
@@ -33,11 +34,13 @@ public class RosTest {
 				});
 		*/
 
+
+		Publisher pub = new Publisher("/bridge", "std_msgs/String", bridge);
 		final Map<String, String> strData = new HashMap<String, String>();
 		strData.put("data", "hello from java");
 		for(int i = 0; i < 100; i++) {
 			System.out.println("sending...");
-			bridge.publish("/bridge", "std_msgs/String", strData);
+			pub.publish(strData);
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {

@@ -28,12 +28,13 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 /**
  *
  * A socket for connecting to ros bridge that accepts subscribe and publish commands.
- * Subscribing to a topic using the {@link #subcsribe(String, String, RosListenDelegate)}} method
+ * Subscribing to a topic using the {@link #subscribe(String, String, RosListenDelegate)}} method
  * requires a provided {@link ros.RosListenDelegate} to be provided
  * which will be informed every time this socket receives a message from a publish
  * to the subscribed topic.
  * <br/>
- * Publishing is also supported with the {@link #publish(String, String, Object)} method.
+ * Publishing is also supported with the {@link #publish(String, String, Object)} method, but you should
+ * consider using the {@link ros.Publisher} class wrapper for streamlining publishing.
  * <br/>
  * To create and connect to rosbridge, use the {@link #createConnection(String)} method.
  * Note that rosbridge by default uses port 9090. An example URI to provide as a parameter is: ws://localhost:9090
@@ -52,11 +53,11 @@ public class RosBridge {
 
 
 	/**
-	 * Creates a connection to the rosbridge websocket server located at rosBridgeURI.
+	 * Creates a connection to the ROS Bridge websocket server located at rosBridgeURI.
 	 * Note that it is recommend that you call the {@link #waitForConnection()} method
-	 * before publishing or subcribing.
-	 * @param rosBridgeURI the URI to the rosbridge websocket server. Note that rosbridge by default uses port 9090. An example URI is: ws://localhost:9090
-	 * @return the RosBride socket that is connected to the indicated server.
+	 * before publishing or subscribing.
+	 * @param rosBridgeURI the URI to the ROS Bridge websocket server. Note that ROS Bridge by default uses port 9090. An example URI is: ws://localhost:9090
+	 * @return the ROS Bridge socket that is connected to the indicated server.
 	 */
 	public static RosBridge createConnection(String rosBridgeURI){
 
@@ -122,8 +123,8 @@ public class RosBridge {
 
 	/**
 	 * Use this to close the connection
-	 * @param duration the time until closing
-	 * @param unit
+	 * @param duration the time in some units until closing.
+	 * @param unit the unit of time in which duration is measured.
 	 * @return the result of the {@link java.util.concurrent.CountDownLatch#await()} method.
 	 * @throws InterruptedException
 	 */
@@ -148,7 +149,6 @@ public class RosBridge {
 
 	@OnWebSocketMessage
 	public void onMessage(String msg) {
-		//System.out.printf("Got msg: %s%n", msg);
 		JsonFactory jsonFactory = new JsonFactory();
 		Map<String, Object> messageData = new HashMap<String, Object>();
 		try {
@@ -173,6 +173,7 @@ public class RosBridge {
 			}
 		}
 	}
+
 
 
 	/**
@@ -210,12 +211,11 @@ public class RosBridge {
 
 
 	/**
-	 * Publishes to a topic. If the topic has not already been advertised on ros, it will automatically do so.
-	 * @param topic the topic to publish to
-	 * @param type the message type of the topic
-	 * @param msg in general should should be a {@link java.util.Map}, specifying the message type data
+	 * Advertises that this object will be publishing to a ROS topic.
+	 * @param topic the topic to which this object will be publishing.
+	 * @param type the ROS message type of the topic.
 	 */
-	public void publish(String topic, String type, Object msg){
+	public void advertise(String topic, String type){
 
 		if(!this.publishedTopics.contains(topic)){
 
@@ -230,6 +230,7 @@ public class RosBridge {
 			try{
 				fut = session.getRemote().sendStringByFuture(adMsg);
 				fut.get(2, TimeUnit.SECONDS);
+				this.publishedTopics.add(topic);
 			}catch (Throwable t){
 				System.out.println("Error in setting up advertisement to " + topic + " with message type: " + type);
 				t.printStackTrace();
@@ -237,7 +238,18 @@ public class RosBridge {
 
 		}
 
-		this.publishedTopics.add(topic);
+	}
+
+
+	/**
+	 * Publishes to a topic. If the topic has not already been advertised on ros, it will automatically do so.
+	 * @param topic the topic to publish to
+	 * @param type the message type of the topic
+	 * @param msg in general should should be a {@link java.util.Map}, specifying the message type data
+	 */
+	public void publish(String topic, String type, Object msg){
+
+		this.advertise(topic, type);
 
 		Map<String, Object> jsonMsg = new HashMap<String, java.lang.Object>();
 		jsonMsg.put("op", "publish");
