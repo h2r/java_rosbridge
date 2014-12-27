@@ -38,7 +38,7 @@ profit.
 
 ## Using the code
 
-Here we will provide a brief description of the library code, but you should consult the Java doc for more detailed information.
+Here we will provide a description of the library code, but you should consult the Java doc for more detailed information.
 
 ### Websockets test code
 
