@@ -181,7 +181,7 @@ public class RosBridge {
 	 * @param type the message type of the topic
 	 * @param delegate the delegate that receives updates to the topic
 	 */
-	public void subsribe(String topic, String type, RosListenDelegate delegate){
+	public void subscribe(String topic, String type, RosListenDelegate delegate){
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
 			this.listeners.put(topic, delegate);
