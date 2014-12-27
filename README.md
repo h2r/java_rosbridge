@@ -1,7 +1,7 @@
 java_rosbridge
 ==============
 
-Simple library using Jetty 9 to connect Java to a ROS Bridge server. Supports publishing and subscribing with different topic delegates.
+A simple library using Jetty 9 to connect Java to a ROS Bridge server. Supports publishing and subscribing with different topic delegates.
 
 ## Compiling
 
