@@ -28,7 +28,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 /**
  *
  * A socket for connecting to ros bridge that accepts subscribe and publish commands.
- * Subscribing to a topic using the {@link #subsribe(String, String, RosListenDelegate)}} method
+ * Subscribing to a topic using the {@link #subcsribe(String, String, RosListenDelegate)}} method
  * requires a provided {@link ros.RosListenDelegate} to be provided
  * which will be informed every time this socket receives a message from a publish
  * to the subscribed topic.
