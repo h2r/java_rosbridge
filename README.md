@@ -35,7 +35,6 @@ The produced Java doc will be in the `doc` folder.
 
 profit.
 
----
 
 ## Using the code
 
