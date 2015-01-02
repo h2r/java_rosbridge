@@ -37,8 +37,9 @@ public class RosTest {
 
 		Publisher pub = new Publisher("/bridge", "std_msgs/String", bridge);
 		final Map<String, String> strData = new HashMap<String, String>();
-		strData.put("data", "hello from java");
+
 		for(int i = 0; i < 100; i++) {
+			strData.put("data", "hello from java " + i);
 			System.out.println("sending...");
 			pub.publish(strData);
 			try {

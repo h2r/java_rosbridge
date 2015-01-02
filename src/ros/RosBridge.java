@@ -211,6 +211,45 @@ public class RosBridge {
 
 
 	/**
+	 * Subscribes to a ros topic. New publish results will be reported to the provided delegate.
+	 * @param topic the to subscribe to
+	 * @param type the message type of the topic
+	 * @param delegate the delegate that receives updates to the topic
+	 * @param throttleRate the minimum amount of time (in ms) that must elapse between messages being sent from the server
+	 * @param queueLength the size of the queue to buffer messages. Messages are buffered as a result of the throttle_rate.
+	 */
+	public void subscribe(String topic, String type, RosListenDelegate delegate, int throttleRate, int queueLength){
+
+		//already have a subscription, so just update delegate
+		if(this.listeners.containsKey(topic)){
+			this.listeners.put(topic, delegate);
+			return;
+		}
+
+		//otherwise setup the subscription and delegate
+		this.listeners.put(topic, delegate);
+
+		String subMsg = "{" +
+				"\"op\": \"subscribe\",\n" +
+				"\"topic\": \"" + topic + "\",\n" +
+				"\"type\": \"" + type + "\",\n" +
+				"\"throttle_rate\": " + throttleRate + ",\n" +
+				"\"queue_length\": " + queueLength + "\n" +
+				"}";
+
+		Future<Void> fut;
+		try{
+			fut = session.getRemote().sendStringByFuture(subMsg);
+			fut.get(2, TimeUnit.SECONDS);
+		}catch (Throwable t){
+			System.out.println("Error in setting up subscription to " + topic + " with message type: " + type);
+			t.printStackTrace();
+		}
+
+	}
+
+
+	/**
 	 * Advertises that this object will be publishing to a ROS topic.
 	 * @param topic the topic to which this object will be publishing.
 	 * @param type the ROS message type of the topic.
