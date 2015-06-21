@@ -1,5 +1,6 @@
 package tests;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import ros.Publisher;
 import ros.RosBridge;
 import ros.RosListenDelegate;
@@ -25,14 +26,14 @@ public class RosTest {
 		bridge.waitForConnection();
 
 		/*
-		bridge.subsribe("/burlap_chatter", "burlap_msgs/burlap_state",
+		bridge.subscribe("/burlap_chatter", "burlap_msgs/burlap_state",
 				new RosListenDelegate() {
 					@Override
-					public void receive(Map<String, Object> data, String stringRep) {
-						System.out.println("I received: " + stringRep);
+					public void receive(JsonNode data, String stringRep) {
+						System.out.println(stringRep);
 					}
-				});
-		*/
+				}, 1, 1);*/
+
 
 
 		Publisher pub = new Publisher("/bridge", "std_msgs/String", bridge);
