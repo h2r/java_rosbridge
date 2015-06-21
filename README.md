@@ -72,3 +72,25 @@ A client Java object interacts with a `RosBridge` object with publish commands a
 Subscribe requests via the `subscribe(String topic, String type, RosListenDelegate delegate)` or `subscribe(String topic, String type, RosListenDelegate delegate, int throttleRate, int queueLength)` method, which take a `RosListenDelegate` object (an interface defined in the `ros` package) which is a callback object that is passed the data sent from ROS Bridge for the specific topics to which you subscribed. You will need to implement your own `RosListenDelegate` object to process the received data, similar to how in normal Python ROS you implement a callback function to process subscriptions.
 **Recommendation**: if you are subscribing to a high frequency topic, you should set the subcribed `throttleRate` and `queueLength` to 1 (or some other small values), otherwise your received data will increasingly lag behind the current real time values.
 
+### Implementing a RosListenDelegate
+
+A `RosListenDelegate` is an interface to define the callback function for subscribed topic messages sent over ROSBridge. It requires that you implement the method `receive(JsonNode data, String stringRep)`. The two parameters of this message present the ROSBridge message in two different formats. The latter, `stringRep`, is the string representation of the ROSBridge message which allows you to do anything you want with the raw data. The former, `data`, is a [JsonNode](http://fasterxml.github.io/jackson-databind/javadoc/2.2.0/com/fasterxml/jackson/databind/JsonNode.html) of the data sent over ROSBridge. `data` has four top-level JSON fields:
+
+`op`: which kind of messag operation it was; should always be "publish" (ROSBridge is passing a published message)
+`topic`: to which topic the message was published
+`type`: the ROS message type of the topic
+`msg`: the provided ros message in JSON format
+
+The `msg` field is the primary field you will want to look at since it contains the actual ROS message. Working with JSON data using the `JsonNode` data structure is very easy, you can use getter methods to fields and elements in arrays and it works recursively. For example, if the ROS message is a `geometry_msgs/Twist.msg` message, and you want the linear x component, you can retreive it with the code:
+
+`double x = data.get("msg").get("linear").get("x").asDouble();`.
+
+If a field's value is an array, it still is returned as a `JsonNode`; however, `JsonNode` has convenient methods for working with it. To get the size of the array use `node.size()` where `node` is the current `JsonNode` element you're using. To get an element within it (also returned as a `JsonNode` for recrusion of non-primitives), use `node.get(i)`, where `i` is the index into the array. See the [JsonNode Java documentation](http://fasterxml.github.io/jackson-databind/javadoc/2.2.0/com/fasterxml/jackson/databind/JsonNode.html) for more information on working with a `JsonNode`.
+
+###### Interfacing with the Legacy Data Format
+
+The earlier version of java_rosbridge (now saved in branch v1), has the `receive` method receive a `Map<String, Object>` data structure for the formatted JSON data, rather than a `JsonNode`. If your code was built on this legacy format and you would like to easily port things over, there is a `LegacyFormat` class within the `RosListenDelegate` interface that allows you to easily get back the `Map<String, Object>` representation of the JSON data. Simply use the code:
+
+`Map<String, Object> oldFormat = RosListenDelegate.LegacyFormat.legacyFormat(stringRep);`
+
+where `stringRep` is the string representation of the ROSBridge passed to the `receive` method, to get back this old format.
