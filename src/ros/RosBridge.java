@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -149,29 +150,27 @@ public class RosBridge {
 
 	@OnWebSocketMessage
 	public void onMessage(String msg) {
-		JsonFactory jsonFactory = new JsonFactory();
-		Map<String, Object> messageData = new HashMap<String, Object>();
+
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode node = null;
 		try {
-			ObjectMapper objectMapper = new ObjectMapper(jsonFactory);
-			TypeReference<Map<String, Object>> listTypeRef =
-					new TypeReference<Map<String, Object>>() {};
-			messageData = objectMapper.readValue(msg, listTypeRef);
-		} catch (JsonParseException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+			node = mapper.readTree(msg);
+		} catch(IOException e) {
+			System.out.println("Could not parse ROSBridge web socket message into JSON data");
 			e.printStackTrace();
 		}
 
-		String op = (String)messageData.get("op");
-		if(op != null){
+		if(node.has("op")){
+			String op = node.get("op").toString();
 			if(op.equals("publish")){
-				String topic = (String)messageData.get("topic");
+				String topic = node.get("topic").toString();
 				RosListenDelegate delegate = this.listeners.get(topic);
 				if(delegate != null){
-					delegate.receive(messageData, msg);
+					delegate.receive(node, msg);
 				}
 			}
 		}
+
 	}
 
 
