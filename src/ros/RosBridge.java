@@ -52,6 +52,8 @@ public class RosBridge {
 
 	protected boolean hasConnected = false;
 
+	protected boolean printMessagesAsReceived = false;
+
 
 	/**
 	 * Creates a connection to the ROS Bridge websocket server located at rosBridgeURI.
@@ -123,6 +125,22 @@ public class RosBridge {
 
 
 	/**
+	 * Returns whether ROSBridge will print all ROSBridge messages as they are received to the command line.
+	 * @return if true, then ROSBridge will print all ROSBridge messages as they are received to the command line. Otherwise is silent.
+	 */
+	public boolean printMessagesAsReceived() {
+		return printMessagesAsReceived;
+	}
+
+	/**
+	 * Sets whether ROSBridge should print all ROSBridge messages as they are received to the command.
+	 * @param printMessagesAsReceived if true, then ROSBridge will print all ROSBridge messages as they are received to the command line. Otherwise is silent.
+	 */
+	public void setPrintMessagesAsReceived(boolean printMessagesAsReceived) {
+		this.printMessagesAsReceived = printMessagesAsReceived;
+	}
+
+	/**
 	 * Use this to close the connection
 	 * @param duration the time in some units until closing.
 	 * @param unit the unit of time in which duration is measured.
@@ -151,6 +169,10 @@ public class RosBridge {
 	@OnWebSocketMessage
 	public void onMessage(String msg) {
 
+		if(this.printMessagesAsReceived){
+			System.out.println(msg);
+		}
+
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode node = null;
 		try {
@@ -161,9 +183,9 @@ public class RosBridge {
 		}
 
 		if(node.has("op")){
-			String op = node.get("op").toString();
+			String op = node.get("op").asText();
 			if(op.equals("publish")){
-				String topic = node.get("topic").toString();
+				String topic = node.get("topic").asText();
 				RosListenDelegate delegate = this.listeners.get(topic);
 				if(delegate != null){
 					delegate.receive(node, msg);
