@@ -76,10 +76,10 @@ Subscribe requests via the `subscribe(String topic, String type, RosListenDelega
 
 A `RosListenDelegate` is an interface to define the callback function for subscribed topic messages sent over ROSBridge. It requires that you implement the method `receive(JsonNode data, String stringRep)`. The two parameters of this message present the ROSBridge message in two different formats. The latter, `stringRep`, is the string representation of the ROSBridge message which allows you to do anything you want with the raw data. The former, `data`, is a [JsonNode](http://fasterxml.github.io/jackson-databind/javadoc/2.2.0/com/fasterxml/jackson/databind/JsonNode.html) of the data sent over ROSBridge. `data` has four top-level JSON fields:
 
-`op`: which kind of messag operation it was; should always be "publish" (ROSBridge is passing a published message)
-`topic`: to which topic the message was published
-`type`: the ROS message type of the topic
-`msg`: the provided ros message in JSON format
+- `op`: which kind of messag operation it was; should always be "publish" (ROSBridge is passing a published message)
+- `topic`: to which topic the message was published
+- `type`: the ROS message type of the topic
+- `msg`: the provided ros message in JSON format
 
 The `msg` field is the primary field you will want to look at since it contains the actual ROS message. Working with JSON data using the `JsonNode` data structure is very easy, you can use getter methods to fields and elements in arrays and it works recursively. For example, if the ROS message is a `geometry_msgs/Twist.msg` message, and you want the linear x component, you can retreive it with the code:
 
