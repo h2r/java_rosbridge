@@ -1,6 +1,18 @@
 package ros;
 
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
+import org.eclipse.jetty.websocket.api.annotations.WebSocket;
+import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
+import org.eclipse.jetty.websocket.client.WebSocketClient;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
@@ -11,20 +23,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.eclipse.jetty.websocket.api.Session;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
-import org.eclipse.jetty.websocket.api.annotations.OnWebSocketMessage;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
-import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 /**
  *
@@ -177,21 +175,22 @@ public class RosBridge {
 		JsonNode node = null;
 		try {
 			node = mapper.readTree(msg);
+			if(node.has("op")){
+				String op = node.get("op").asText();
+				if(op.equals("publish")){
+					String topic = node.get("topic").asText();
+					RosListenDelegate delegate = this.listeners.get(topic);
+					if(delegate != null){
+						delegate.receive(node, msg);
+					}
+				}
+			}
 		} catch(IOException e) {
 			System.out.println("Could not parse ROSBridge web socket message into JSON data");
 			e.printStackTrace();
 		}
 
-		if(node.has("op")){
-			String op = node.get("op").asText();
-			if(op.equals("publish")){
-				String topic = node.get("topic").asText();
-				RosListenDelegate delegate = this.listeners.get(topic);
-				if(delegate != null){
-					delegate.receive(node, msg);
-				}
-			}
-		}
+
 
 	}
 
