@@ -87,29 +87,23 @@ public class RosBridge {
 
 	/**
 	 * Blocks execution until a connection to the ros bridge server is established.
-	 * Blocking polls every 500ms in a separate thread to check if the connection
-	 * is established.
 	 */
 	public void waitForConnection(){
-		Thread waitThread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				while(!RosBridge.this.hasConnected){
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+
+		if(this.hasConnected){
+			return; //done
+		}
+
+		synchronized(this){
+			while(!this.hasConnected){
+				try {
+					this.wait();
+				} catch(InterruptedException e) {
+					e.printStackTrace();
 				}
 			}
-		});
-
-		waitThread.start();
-		try {
-			waitThread.join();
-		} catch (InterruptedException e) {
-			e.printStackTrace();
 		}
+
 	}
 
 
@@ -161,6 +155,9 @@ public class RosBridge {
 		System.out.printf("Got connect for ros: %s%n", session);
 		this.session = session;
 		this.hasConnected = true;
+		synchronized(this) {
+			this.notifyAll();
+		}
 
 	}
 
