@@ -8,10 +8,13 @@ package ros;
  * automatically make sure the topic has been advertised first.
  * <br/>
  * Publish messages using the {@link #publish(Object)} method. It takes an object containing the ROS message
- * to publish. Generally, the message should be {@link java.util.Map} object of some sort representing the
- * ROS message type structure. For
- * example, if the ROS message type is "std_msgs/String" then the message should be a Map<String,String> object
- * with one Map entry of "data: stringValue" where stringValue is whatever the "std_msgs/String"
+ * to publish. Generally, the msg should either be a Javabean, such as one of the pre-included
+ * messages in the {@link ros.msgs} package that has the same field structure as the target topic type
+ * or a {@link java.util.Map} object
+ * representing the ROS message type structure. For
+ * example, if the ROS message type is "std_msgs/String" then msg should be a {@link ros.msgs.std_msgs.PrimitiveMsg}
+ * with the generic of String, or a Map<String,String> object
+ * with one Map key-value entry of "data: stringValue" where stringValue is whatever the "std_msgs/String"
  * data field value is.
  * @author James MacGlashan.
  */
@@ -68,9 +71,12 @@ public class Publisher {
 
 
 	/**
-	 * Publishes the message. Generally, the msg should be a {@link java.util.Map} object of some sort
+	 * Publishes the message. Generally, the msg should either be a Javabean, such as one of the pre-included
+	 * messages in the {@link ros.msgs} package that has the same field structure as the target topic type
+	 * or a {@link java.util.Map} object
 	 * representing the ROS message type structure. For
-	 * example, if the ROS message type is "std_msgs/String" then msg should be a Map<String,String> object
+	 * example, if the ROS message type is "std_msgs/String" then msg should be a {@link ros.msgs.std_msgs.PrimitiveMsg}
+	 * with the generic of String, or a Map<String,String> object
 	 * with one Map key-value entry of "data: stringValue" where stringValue is whatever the "std_msgs/String"
 	 * data field value is.
 	 * @param msg the message to publish.
