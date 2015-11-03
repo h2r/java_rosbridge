@@ -158,11 +158,3 @@ Alternatively, if you do not have a Java Bean class into which you can trivially
 `double x = data.get("msg").get("linear").get("x").asDouble();`.
 
 If a field's value is an array, it still is returned as a `JsonNode`; however, `JsonNode` has convenient methods for working with it. To get the size of the array use `node.size()` where `node` is the current `JsonNode` element you're using. To get an element within it (also returned as a `JsonNode` for recrusion of non-primitives), use `node.get(i)`, where `i` is the index into the array. See the [JsonNode Java documentation](http://fasterxml.github.io/jackson-databind/javadoc/2.2.0/com/fasterxml/jackson/databind/JsonNode.html) for more information on working with a `JsonNode`.
-
-###### Interfacing with the Legacy Data Format
-
-The earlier version of java_rosbridge (now saved in branch v1), has the `receive` method receive a `Map<String, Object>` data structure for the formatted JSON data, rather than a `JsonNode`. If your code was built on this legacy format and you would like to easily port things over, there is a `LegacyFormat` class within the `RosListenDelegate` interface that allows you to easily get back the `Map<String, Object>` representation of the JSON data. Simply use the code:
-
-`Map<String, Object> oldFormat = RosListenDelegate.LegacyFormat.legacyFormat(stringRep);`
-
-where `stringRep` is the string representation of the ROSBridge passed to the `receive` method, to get back this old format.
