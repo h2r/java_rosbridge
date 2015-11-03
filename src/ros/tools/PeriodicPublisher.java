@@ -10,7 +10,8 @@ import java.util.TimerTask;
  * This class is a tool for causing a ROS message to be periodically published at a given rate. To start periodic publishing
  * use the {@link #beginPublishing(int)} or {@link #beginPublishing(Object, int)} methods. Note that subsequent calls
  * to these method will automatically cancel the previous periodic publishing and start again at the newly specified rate.
- * To cancel periodic publishing, use the {@link #cancelPublishing()} method.
+ * To cancel periodic publishing, use the {@link #cancelPublishing()} method. You can also change the message that is
+ * being published without stopping or restarting the publishing by using the {@link #setMsg(Object)} method.
  * @author James MacGlashan.
  */
 public class PeriodicPublisher {
