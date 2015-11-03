@@ -12,19 +12,20 @@ import java.util.Map;
 
 /**
  * This is a delegate interface for handling ros topic subscriptions. The {@link #receive(com.fasterxml.jackson.databind.JsonNode, String)}
- * is called every time the topic with which this delegate is associated has new message published.
+ * is called every time the topic with which this delegate is associated has a new message published.
  * The JSON data, given as a {@link com.fasterxml.jackson.databind.JsonNode}, has four top-level fields:<br/>
  * op: what kind of operation it was; should always be "publish"<br/>
  * topic: to which topic the message was published<br/>
  * type: the ROS message type of the topic<br/>
  * msg: the provided ros message in JSON format. This the primary field you will work with.<br/>
- * In general, you will need to iterate into the msg field of the message and parse out the data you want. For example,
- * for a geometry_msgs/Twist.msg message, you can get out the linear x value as follows:<br/>
+ * There are generally two ways you can parse the message into a more usable Java object. The first involves manually
+ * iterating through the JSON fields of the msg. For example,
+ * for a geometry_msgs/Twist message, you can get out the linear x value as follows:<br/>
  * <code>double x = data.get("msg").get("linear").get("x").asDouble();</code><br/>
- * If a value for a message is an array, the {@link com.fasterxml.jackson.databind.JsonNode} has a method for getting each
- * indexed value: {@link com.fasterxml.jackson.databind.JsonNode#get(int)} instead of by field key, which also returns a
- * {@link com.fasterxml.jackson.databind.JsonNode}. You can get back the size of the array value with the
- * {@link com.fasterxml.jackson.databind.JsonNode#size()} method.
+ * (If an element is na array, JSON methods exist for handling it such as {@link com.fasterxml.jackson.databind.JsonNode#get(int)}
+ * and {@link com.fasterxml.jackson.databind.JsonNode#size()}). The the other way is to let the Jackson library unpack
+ * it into a JavaBean. The {@link ros.tools.MessageUnpacker} class further streamlines this process. See its documentation
+ * for more information.
  * @author James MacGlashan.
  */
 public interface RosListenDelegate {
@@ -39,7 +40,7 @@ public interface RosListenDelegate {
 	 * @param data the {@link com.fasterxml.jackson.databind.JsonNode} containing the JSON data received.
 	 * @param stringRep the string representation of the JSON object.
 	 */
-	public void receive(JsonNode data, String stringRep);
+	void receive(JsonNode data, String stringRep);
 
 
 	/**
