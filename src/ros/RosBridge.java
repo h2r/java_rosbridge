@@ -16,10 +16,7 @@ import org.eclipse.jetty.websocket.client.WebSocketClient;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +42,7 @@ public class RosBridge {
 	protected final CountDownLatch closeLatch;
 	protected Session session;
 
-	protected Map<String, RosListenDelegate> listeners = new HashMap<String, RosListenDelegate>();
+	protected Map<String, RosBridgeSubscriber> listeners = new HashMap<String, RosBridgeSubscriber>();
 	protected Set<String> publishedTopics = new HashSet<String>();
 
 	protected boolean hasConnected = false;
@@ -176,9 +173,9 @@ public class RosBridge {
 				String op = node.get("op").asText();
 				if(op.equals("publish")){
 					String topic = node.get("topic").asText();
-					RosListenDelegate delegate = this.listeners.get(topic);
-					if(delegate != null){
-						delegate.receive(node, msg);
+					RosBridgeSubscriber subscriber = this.listeners.get(topic);
+					if(subscriber != null){
+						subscriber.receive(node, msg);
 					}
 				}
 			}
@@ -202,12 +199,12 @@ public class RosBridge {
 	public void subscribe(String topic, String type, RosListenDelegate delegate){
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
-			this.listeners.put(topic, delegate);
+			this.listeners.get(topic).addDelegate(delegate);
 			return;
 		}
 
 		//otherwise setup the subscription and delegate
-		this.listeners.put(topic, delegate);
+		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
 
 		String subMsg = "{" +
 				"\"op\": \"subscribe\",\n" +
@@ -239,12 +236,12 @@ public class RosBridge {
 
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
-			this.listeners.put(topic, delegate);
+			this.listeners.get(topic).addDelegate(delegate);
 			return;
 		}
 
 		//otherwise setup the subscription and delegate
-		this.listeners.put(topic, delegate);
+		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
 
 		String subMsg = "{" +
 				"\"op\": \"subscribe\",\n" +
@@ -261,6 +258,21 @@ public class RosBridge {
 		}catch (Throwable t){
 			System.out.println("Error in setting up subscription to " + topic + " with message type: " + type);
 			t.printStackTrace();
+		}
+
+	}
+
+
+	/**
+	 * Stops a {@link RosListenDelegate} from receiving messages from Rosbridge.
+	 * @param topic the topic on which the listener subscribed.
+	 * @param delegate the delegate to remove.
+	 */
+	public void removeListener(String topic, RosListenDelegate delegate){
+
+		RosBridgeSubscriber subscriber = this.listeners.get(topic);
+		if(subscriber != null){
+			subscriber.removeDelegate(delegate);
 		}
 
 	}
@@ -416,5 +428,56 @@ public class RosBridge {
 	}
 
 
+	/**
+	 * Class for managing all the listeners that have subscribed to a topic on Rosbridge.
+	 * Maintains a list of {@link RosListenDelegate} objects and informs them all
+	 * when a message has been received from Rosbridge.
+	 */
+	public static class RosBridgeSubscriber{
+
+		List<RosListenDelegate> delegates = new ArrayList<RosListenDelegate>();
+
+		public RosBridgeSubscriber() {
+		}
+
+		/**
+		 * Initializes and adds all the input delegates to receive messages.
+		 * @param delegates the delegates to receive messages.
+		 */
+		public RosBridgeSubscriber(RosListenDelegate...delegates) {
+			for(RosListenDelegate delegate : delegates){
+				this.delegates.add(delegate);
+			}
+		}
+
+		/**
+		 * Adds a delegate to receive messages from Rosbridge.
+		 * @param delegate a delegate to receive messages from Rosbridge.
+		 */
+		public void addDelegate(RosListenDelegate delegate){
+			this.delegates.add(delegate);
+		}
+
+
+		/**
+		 * Removes a delegate from receiving messages from Rosbridge
+		 * @param delegate the delegate to stop receiving messages.
+		 */
+		public void removeDelegate(RosListenDelegate delegate){
+			this.delegates.remove(delegate);
+		}
+
+		/**
+		 * Receives a new published message to a subscribed topic and informs all listeners.
+		 * @param data the {@link com.fasterxml.jackson.databind.JsonNode} containing the JSON data received.
+		 * @param stringRep the string representation of the JSON object.
+		 */
+		public void receive(JsonNode data, String stringRep){
+			for(RosListenDelegate delegate : delegates){
+				delegate.receive(data, stringRep);
+			}
+		}
+
+	}
 
 }
