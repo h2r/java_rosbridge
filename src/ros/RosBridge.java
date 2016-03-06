@@ -5,7 +5,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.istack.internal.Nullable;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
@@ -203,7 +202,7 @@ public class RosBridge {
 	 * @param type the message type of the topic. Pass null for type inference.
 	 * @param delegate the delegate that receives updates to the topic
 	 */
-	public void subscribe(String topic, @Nullable String type, RosListenDelegate delegate){
+	public void subscribe(String topic, String type, RosListenDelegate delegate){
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
 			this.listeners.get(topic).addDelegate(delegate);
@@ -250,7 +249,7 @@ public class RosBridge {
 	 * @param throttleRate the minimum amount of time (in ms) that must elapse between messages being sent from the server
 	 * @param queueLength the size of the queue to buffer messages. Messages are buffered as a result of the throttle_rate.
 	 */
-	public void subscribe(String topic, @Nullable String type, RosListenDelegate delegate, int throttleRate, int queueLength){
+	public void subscribe(String topic, String type, RosListenDelegate delegate, int throttleRate, int queueLength){
 
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
