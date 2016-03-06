@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.istack.internal.Nullable;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
@@ -27,7 +28,11 @@ import java.util.concurrent.TimeUnit;
  * Subscribing to a topic using the {@link #subscribe(String, String, RosListenDelegate)}} method
  * requires a provided {@link ros.RosListenDelegate} to be provided
  * which will be informed every time this socket receives a message from a publish
- * to the subscribed topic.
+ * to the subscribed topic. The message type in this method may be left null to perform
+ * type inference, but subscription will fail with Rosbridge when the type is null IF the topic
+ * does not already exist. You may also use the {@link #subscribe(String, String, RosListenDelegate, int, int)}
+ * method to set a queue size and throttle rate. For fast data, you should set the throttle rate and queue size to 1,
+ * or increasing lag may occur.
  * <br/>
  * Publishing is also supported with the {@link #publish(String, String, Object)} method, but you should
  * consider using the {@link ros.Publisher} class wrapper for streamlining publishing.
@@ -191,12 +196,14 @@ public class RosBridge {
 
 
 	/**
-	 * Subscribes to a ros topic. New publish results will be reported to the provided delegate
+	 * Subscribes to a ros topic. New publish results will be reported to the provided delegate.
+	 * If message type is null, then the type will be inferred. When type is null, if a topic
+	 * does not already exist, subscribe will fail.
 	 * @param topic the to subscribe to
-	 * @param type the message type of the topic
+	 * @param type the message type of the topic. Pass null for type inference.
 	 * @param delegate the delegate that receives updates to the topic
 	 */
-	public void subscribe(String topic, String type, RosListenDelegate delegate){
+	public void subscribe(String topic, @Nullable String type, RosListenDelegate delegate){
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
 			this.listeners.get(topic).addDelegate(delegate);
@@ -206,11 +213,20 @@ public class RosBridge {
 		//otherwise setup the subscription and delegate
 		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
 
-		String subMsg = "{" +
-				"\"op\": \"subscribe\",\n" +
-				"\"topic\": \"" + topic + "\",\n" +
-				"\"type\": \"" + type + "\"\n" +
-				"}";
+		String subMsg = null;
+		if(type != null) {
+			subMsg = "{" +
+					"\"op\": \"subscribe\",\n" +
+					"\"topic\": \"" + topic + "\",\n" +
+					"\"type\": \"" + type + "\"\n" +
+					"}";
+		}
+		else{
+			subMsg = "{" +
+					"\"op\": \"subscribe\",\n" +
+					"\"topic\": \"" + topic + "\"\n" +
+					"}";
+		}
 
 		Future<Void> fut;
 		try{
@@ -226,13 +242,15 @@ public class RosBridge {
 
 	/**
 	 * Subscribes to a ros topic. New publish results will be reported to the provided delegate.
+	 * If message type is null, then the type will be inferred. When type is null, if a topic
+	 * does not already exist, subscribe will fail.
 	 * @param topic the to subscribe to
-	 * @param type the message type of the topic
+	 * @param type the message type of the topic. Pass null for type inference.
 	 * @param delegate the delegate that receives updates to the topic
 	 * @param throttleRate the minimum amount of time (in ms) that must elapse between messages being sent from the server
 	 * @param queueLength the size of the queue to buffer messages. Messages are buffered as a result of the throttle_rate.
 	 */
-	public void subscribe(String topic, String type, RosListenDelegate delegate, int throttleRate, int queueLength){
+	public void subscribe(String topic, @Nullable String type, RosListenDelegate delegate, int throttleRate, int queueLength){
 
 		//already have a subscription, so just update delegate
 		if(this.listeners.containsKey(topic)){
@@ -243,13 +261,24 @@ public class RosBridge {
 		//otherwise setup the subscription and delegate
 		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
 
-		String subMsg = "{" +
+		String subMsg = null;
+		if(topic != null){
+			subMsg = "{" +
 				"\"op\": \"subscribe\",\n" +
 				"\"topic\": \"" + topic + "\",\n" +
 				"\"type\": \"" + type + "\",\n" +
 				"\"throttle_rate\": " + throttleRate + ",\n" +
 				"\"queue_length\": " + queueLength + "\n" +
 				"}";
+		}
+		else{
+			subMsg = "{" +
+				"\"op\": \"subscribe\",\n" +
+				"\"topic\": \"" + topic + "\",\n" +
+				"\"throttle_rate\": " + throttleRate + ",\n" +
+				"\"queue_length\": " + queueLength + "\n" +
+				"}";
+		}
 
 		Future<Void> fut;
 		try{
