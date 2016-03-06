@@ -301,7 +301,7 @@ public class RosBridge {
 	 * Publishes to a topic. If the topic has not already been advertised on ros, it will automatically do so.
 	 * @param topic the topic to publish to
 	 * @param type the message type of the topic
-	 * @param msg in general should should be a {@link java.util.Map}, specifying the message type data
+	 * @param msg should be a {@link java.util.Map} or a Java Bean, specifying the ROS message
 	 */
 	public void publish(String topic, String type, Object msg){
 
@@ -335,8 +335,86 @@ public class RosBridge {
 			t.printStackTrace();
 		}
 
+	}
 
+
+	/**
+	 * Publishes to a topic with a ros message represented in its JSON string form.
+	 * If the topic has not already been advertised on ros, it will automatically do so.
+	 * @param topic the topic to publish to
+	 * @param type the message type of the topic
+	 * @param jsonMsg the JSON string of the ROS message.
+	 */
+	public void publishJsonMsg(String topic, String type, String jsonMsg){
+
+		this.advertise(topic, type);
+
+		String fullMsg = "{\"op\": \"publish\", \"topic\": \"" + topic + "\", \"type\": \"" + type + "\", " +
+				"\"msg\": " + jsonMsg + "}";
+
+
+		Future<Void> fut;
+		try{
+			fut = session.getRemote().sendStringByFuture(fullMsg);
+			fut.get(2, TimeUnit.SECONDS);
+		}catch (Throwable t){
+			System.out.println("Error publishing to " + topic + " with message type: " + type);
+			t.printStackTrace();
+		}
 
 	}
+
+
+	/**
+	 * Sends the provided fully specified message to the ROS Bridge server. Since the RosBridge server
+	 * expects JSON messages, the string message should probably be in JSON format and adhere to the R
+	 * Rosbridge protocol, but this method will send whatever raw string you provide.
+	 * @param message the message to send to Rosbridge.
+	 */
+	public void sendRawMessage(String message){
+
+		Future<Void> fut;
+		try{
+			fut = session.getRemote().sendStringByFuture(message);
+			fut.get(2, TimeUnit.SECONDS);
+		}catch (Throwable t){
+			System.out.println("Error sending raw message to RosBridge server: " + message);
+			t.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Attempts to turn the the provided object into a JSON message and send it to the ROSBridge server.
+	 * If the object does not satisfy the Rosbridge protocol, it may have no affect.
+	 * @param o the object to turn into a JSON message and send.
+	 */
+	public void formatAndSend(Object o){
+
+		JsonFactory jsonFactory = new JsonFactory();
+		StringWriter writer = new StringWriter();
+		JsonGenerator jsonGenerator;
+		ObjectMapper objectMapper = new ObjectMapper();
+
+		try {
+			jsonGenerator = jsonFactory.createGenerator(writer);
+			objectMapper.writeValue(jsonGenerator, o);
+		} catch(Exception e){
+			System.out.println("Error parsing object into a JSON message.");
+		}
+
+		String jsonMsgString = writer.toString();
+		Future<Void> fut;
+		try{
+			fut = session.getRemote().sendStringByFuture(jsonMsgString);
+			fut.get(2, TimeUnit.SECONDS);
+		}catch (Throwable t){
+			System.out.println("Error sending message to RosBridge server: " + jsonMsgString);
+			t.printStackTrace();
+		}
+
+	}
+
+
 
 }

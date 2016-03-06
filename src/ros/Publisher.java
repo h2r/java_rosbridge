@@ -71,7 +71,8 @@ public class Publisher {
 
 
 	/**
-	 * Publishes the message. Generally, the msg should either be a Javabean, such as one of the pre-included
+	 * Publishes the message. If this client is not already advertising for this topic, it automatically will first.<br/><br/>
+	 * Generally, the msg should either be a Javabean, such as one of the pre-included
 	 * messages in the {@link ros.msgs} package that has the same field structure as the target topic type
 	 * or a {@link java.util.Map} object
 	 * representing the ROS message type structure. For
@@ -85,6 +86,15 @@ public class Publisher {
 		this.rosBridge.publish(this.topic, this.msgType, msg);
 	}
 
+
+	/**
+	 * Publishes a ROS message specified in a JSON string.
+	 * If this client is not already advertising for this topic, it automatically will first.
+	 * @param jsonMsg the ROS message specified in a JSON string.
+	 */
+	public void publishJsonMsg(String jsonMsg){
+		this.rosBridge.publishJsonMsg(this.topic, this.msgType, jsonMsg);
+	}
 
 	/**
 	 * Returns the topic topic to which this object publishes.
