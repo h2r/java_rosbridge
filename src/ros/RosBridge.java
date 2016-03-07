@@ -36,11 +36,24 @@ import java.util.concurrent.TimeUnit;
  * Publishing is also supported with the {@link #publish(String, String, Object)} method, but you should
  * consider using the {@link ros.Publisher} class wrapper for streamlining publishing.
  * <br/>
- * To create and connect to rosbridge, use the {@link #createConnection(String)} method.
- * Note that rosbridge by default uses port 9090. An example URI to provide as a parameter is: ws://localhost:9090
+ * To create and connect to rosbridge, you can either instantiate with the default constructor
+ * and then call {@link #connect(String)} or use the static method {@link #createConnection(String)} which
+ * creates a RosBridge instance and then connects.
+ * An example URI to provide as a parameter is: ws://localhost:9090, where 9090 is the default Rosbridge server port.
+ * <br/>
+ * If you need to handle messages with larger sizes, you should subclass RosBridge and annotate the class
+ * with {@link WebSocket} with the parameter maxTextMessageSize set to the desired buffer size. For example:
+ * <br/>
+ * <code>
+ *	@WebSocket(maxTextMessageSize = 500 * 1024)  public class BigRosBridge extends RosBridge{  }
+ * </code>
+ * <br/>
+ * Note that the subclass does not need to override any methods; subclassing is performed purely to set the
+ * buffer size in the annotation value. Then you can instantiate BigRosBridge and call its inherited connect method.
+ *
  * @author James MacGlashan.
  */
-@WebSocket(maxTextMessageSize = 64 * 1024)
+@WebSocket
 public class RosBridge {
 
 	protected final CountDownLatch closeLatch;
@@ -49,13 +62,15 @@ public class RosBridge {
 	protected Map<String, RosBridgeSubscriber> listeners = new HashMap<String, RosBridgeSubscriber>();
 	protected Set<String> publishedTopics = new HashSet<String>();
 
+	protected Map<String, FragmentManager> fragementManagers = new HashMap<String, FragmentManager>();
+
 	protected boolean hasConnected = false;
 
 	protected boolean printMessagesAsReceived = false;
 
 
 	/**
-	 * Creates a connection to the ROS Bridge websocket server located at rosBridgeURI.
+	 * Creates a default RosBridge and connects it to the ROS Bridge websocket server located at rosBridgeURI.
 	 * Note that it is recommend that you call the {@link #waitForConnection()} method
 	 * before publishing or subscribing.
 	 * @param rosBridgeURI the URI to the ROS Bridge websocket server. Note that ROS Bridge by default uses port 9090. An example URI is: ws://localhost:9090
@@ -63,23 +78,53 @@ public class RosBridge {
 	 */
 	public static RosBridge createConnection(String rosBridgeURI){
 
-		WebSocketClient client = new WebSocketClient();
 		final RosBridge socket = new RosBridge();
+		socket.connect(rosBridgeURI);
+		return socket;
+
+	}
+
+
+	/**
+	 * Connects to the Rosbridge host at the provided URI.
+	 * @param rosBridgeURI the URI to the ROS Bridge websocket server. Note that ROS Bridge by default uses port 9090. An example URI is: ws://localhost:9090
+	 */
+	public void connect(String rosBridgeURI){
+		WebSocketClient client = new WebSocketClient();
 		try {
 			client.start();
 			URI echoUri = new URI(rosBridgeURI);
 			ClientUpgradeRequest request = new ClientUpgradeRequest();
-			client.connect(socket, echoUri, request);
+			client.connect(this, echoUri, request);
 			System.out.printf("Connecting to : %s%n", echoUri);
 
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
-
-		return socket;
-
 	}
 
+	/**
+	 * Connects to the Rosbridge host at the provided URI.
+	 * @param rosBridgeURI the URI to the ROS Bridge websocket server. Note that ROS Bridge by default uses port 9090. An example URI is: ws://localhost:9090
+	 * @param waitForConnection if true, then this method will block until the connection is established. If false, then return immediately.
+	 */
+	public void connect(String rosBridgeURI, boolean waitForConnection){
+		WebSocketClient client = new WebSocketClient();
+		try {
+			client.start();
+			URI echoUri = new URI(rosBridgeURI);
+			ClientUpgradeRequest request = new ClientUpgradeRequest();
+			client.connect(this, echoUri, request);
+			System.out.printf("Connecting to : %s%n", echoUri);
+			if(waitForConnection){
+				this.waitForConnection();
+			}
+
+		} catch (Throwable t) {
+			t.printStackTrace();
+		}
+
+	}
 
 	public RosBridge(){
 		this.closeLatch = new CountDownLatch(1);
@@ -182,6 +227,9 @@ public class RosBridge {
 						subscriber.receive(node, msg);
 					}
 				}
+				else if(op.equals("fragment")){
+					this.processFragment(node);
+				}
 			}
 		} catch(IOException e) {
 			System.out.println("Could not parse ROSBridge web socket message into JSON data");
@@ -203,39 +251,7 @@ public class RosBridge {
 	 * @param delegate the delegate that receives updates to the topic
 	 */
 	public void subscribe(String topic, String type, RosListenDelegate delegate){
-		//already have a subscription, so just update delegate
-		if(this.listeners.containsKey(topic)){
-			this.listeners.get(topic).addDelegate(delegate);
-			return;
-		}
-
-		//otherwise setup the subscription and delegate
-		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
-
-		String subMsg = null;
-		if(type != null) {
-			subMsg = "{" +
-					"\"op\": \"subscribe\",\n" +
-					"\"topic\": \"" + topic + "\",\n" +
-					"\"type\": \"" + type + "\"\n" +
-					"}";
-		}
-		else{
-			subMsg = "{" +
-					"\"op\": \"subscribe\",\n" +
-					"\"topic\": \"" + topic + "\"\n" +
-					"}";
-		}
-
-		Future<Void> fut;
-		try{
-			fut = session.getRemote().sendStringByFuture(subMsg);
-			fut.get(2, TimeUnit.SECONDS);
-		}catch (Throwable t){
-			System.out.println("Error in setting up subscription to " + topic + " with message type: " + type);
-			t.printStackTrace();
-		}
-
+		this.subscribe(SubscriptionRequestMsg.generate(topic).setType(type), delegate);
 	}
 
 
@@ -251,7 +267,25 @@ public class RosBridge {
 	 */
 	public void subscribe(String topic, String type, RosListenDelegate delegate, int throttleRate, int queueLength){
 
-		//already have a subscription, so just update delegate
+		this.subscribe(SubscriptionRequestMsg.generate(topic)
+				.setType(type)
+				.setThrottleRate(throttleRate)
+				.setQueueLength(queueLength),
+							delegate);
+
+	}
+
+	/**
+	 * Subscribes to a topic with the subscription parameters specified in the provided {@link SubscriptionRequestMsg}.
+	 * The {@link RosListenDelegate} will be notified every time there is a publish to the specified topic.
+	 * @param request the subscription request details.
+	 * @param delegate the delegate that will receive messages each time a message is published to the topic.
+	 */
+	public void subscribe(SubscriptionRequestMsg request, RosListenDelegate delegate){
+
+		String topic = request.getTopic();
+
+		//already have a subscription? just update delegate
 		if(this.listeners.containsKey(topic)){
 			this.listeners.get(topic).addDelegate(delegate);
 			return;
@@ -260,33 +294,16 @@ public class RosBridge {
 		//otherwise setup the subscription and delegate
 		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
 
-		String subMsg = null;
-		if(topic != null){
-			subMsg = "{" +
-				"\"op\": \"subscribe\",\n" +
-				"\"topic\": \"" + topic + "\",\n" +
-				"\"type\": \"" + type + "\",\n" +
-				"\"throttle_rate\": " + throttleRate + ",\n" +
-				"\"queue_length\": " + queueLength + "\n" +
-				"}";
-		}
-		else{
-			subMsg = "{" +
-				"\"op\": \"subscribe\",\n" +
-				"\"topic\": \"" + topic + "\",\n" +
-				"\"throttle_rate\": " + throttleRate + ",\n" +
-				"\"queue_length\": " + queueLength + "\n" +
-				"}";
-		}
-
+		String subMsg = request.generateJsonString();
 		Future<Void> fut;
 		try{
 			fut = session.getRemote().sendStringByFuture(subMsg);
 			fut.get(2, TimeUnit.SECONDS);
 		}catch (Throwable t){
-			System.out.println("Error in setting up subscription to " + topic + " with message type: " + type);
+			System.out.println("Error in sending subscription message to Rosbridge host for topic " + topic);
 			t.printStackTrace();
 		}
+
 
 	}
 
@@ -301,6 +318,11 @@ public class RosBridge {
 		RosBridgeSubscriber subscriber = this.listeners.get(topic);
 		if(subscriber != null){
 			subscriber.removeDelegate(delegate);
+
+			if(subscriber.numDelegates() == 0){
+				this.unsubscribe(topic);
+			}
+
 		}
 
 	}
@@ -334,6 +356,31 @@ public class RosBridge {
 
 		}
 
+	}
+
+	/**
+	 * Unsubscribes from a topic. Note that if there are multiple {@link RosListenDelegate}
+	 * objects subscribed to a topic, they will all unsubscribe. If you want to remove only
+	 * one, instead use {@link #removeListener(String, RosListenDelegate)}.
+	 * @param topic the topic from which to unsubscribe.
+	 */
+	public void unsubscribe(String topic){
+		String usMsg = "{" +
+				"\"op\": \"unsubscribe\",\n" +
+				"\"topic\": \"" + topic + "\"\n" +
+				"}";
+
+		Future<Void> fut;
+		try{
+			fut = session.getRemote().sendStringByFuture(usMsg);
+			fut.get(2, TimeUnit.SECONDS);
+			this.publishedTopics.add(topic);
+		}catch (Throwable t){
+			System.out.println("Error in sending unsubscribe message for " + topic);
+			t.printStackTrace();
+		}
+
+		this.listeners.remove(topic);
 	}
 
 
@@ -456,6 +503,24 @@ public class RosBridge {
 	}
 
 
+
+	protected void processFragment(JsonNode node){
+		String id = node.get("id").textValue();
+		FragmentManager manager = this.fragementManagers.get(id);
+		if(manager == null){
+			manager = new FragmentManager(node);
+			this.fragementManagers.put(id, manager);
+		}
+		boolean complete = manager.updateFragment(node);
+
+		if(complete){
+			String fullMsg = manager.generateFullMessage();
+			this.fragementManagers.remove(id);
+			this.onMessage(fullMsg);
+		}
+
+	}
+
 	/**
 	 * Class for managing all the listeners that have subscribed to a topic on Rosbridge.
 	 * Maintains a list of {@link RosListenDelegate} objects and informs them all
@@ -463,7 +528,7 @@ public class RosBridge {
 	 */
 	public static class RosBridgeSubscriber{
 
-		List<RosListenDelegate> delegates = new ArrayList<RosListenDelegate>();
+		protected List<RosListenDelegate> delegates = new ArrayList<RosListenDelegate>();
 
 		public RosBridgeSubscriber() {
 		}
@@ -504,6 +569,63 @@ public class RosBridge {
 			for(RosListenDelegate delegate : delegates){
 				delegate.receive(data, stringRep);
 			}
+		}
+
+		/**
+		 * Returns the number of delegates listening to this topic.
+		 * @return the number of delegates listening to this topic.
+		 */
+		public int numDelegates(){
+			return this.delegates.size();
+		}
+
+	}
+
+	public static class FragmentManager{
+
+		protected String id;
+		protected String [] fragments;
+		protected Set <Integer> completedFragements;
+
+		public FragmentManager(JsonNode fragmentJson){
+			int total = fragmentJson.get("total").intValue();
+			this.fragments = new String[total];
+			this.completedFragements = new HashSet<Integer>(total);
+			this.id = fragmentJson.get("id").textValue();
+		}
+
+		public boolean updateFragment(JsonNode fragmentJson){
+			String data = fragmentJson.get("data").asText();
+			int num = fragmentJson.get("num").intValue();
+			this.fragments[num] = data;
+			completedFragements.add(num);
+			return this.complete();
+		}
+
+		public boolean complete(){
+			return this.completedFragements.size() == fragments.length;
+		}
+
+		public int numFragments(){
+			return this.fragments.length;
+		}
+
+		public int numCompletedFragments(){
+			return this.completedFragements.size();
+		}
+
+		public String generateFullMessage(){
+			if(!this.complete()){
+				throw new RuntimeException("Cannot generate full message from fragments, because not all fragments have arrived.");
+			}
+
+			StringBuilder buf = new StringBuilder(fragments[0].length() * fragments.length);
+			for(String frag : this.fragments){
+				buf.append(frag);
+			}
+
+			return buf.toString();
+
 		}
 
 	}
