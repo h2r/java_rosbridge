@@ -96,6 +96,7 @@ public class Publisher {
 		this.rosBridge.publishJsonMsg(this.topic, this.msgType, jsonMsg);
 	}
 
+
 	/**
 	 * Returns the topic topic to which this object publishes.
 	 * @return the topic topic to which this object publishes.

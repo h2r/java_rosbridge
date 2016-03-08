@@ -7,6 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * A Subscription request builder. Supports all Rosbridge protocol fields for
+ * a subscription request except png compression. Requires a topic to be set,
+ * with the rest of the optional values set with setter methods that return
+ * the this object so that you can chain settters on a single line. Use
+ * the static {@link #generate(String)} to start the sequence. If a value is set
+ * to null, it will be removed from the message.
+ * <br/><br/>
+ * When everything is set, the JSON message can be retrieved with the {@link #generateJsonString()}
  * @author James MacGlashan.
  */
 public class SubscriptionRequestMsg {
@@ -35,25 +43,21 @@ public class SubscriptionRequestMsg {
 		return this;
 	}
 
-	public SubscriptionRequestMsg setThrottleRate(int throttleRate){
+	public SubscriptionRequestMsg setThrottleRate(Integer throttleRate){
 		this.setKeyValue("throttle_rate", throttleRate);
 		return this;
 	}
 
-	public SubscriptionRequestMsg setQueueLength(int queueLength){
+	public SubscriptionRequestMsg setQueueLength(Integer queueLength){
 		this.setKeyValue("queue_length", queueLength);
 		return this;
 	}
 
-	public SubscriptionRequestMsg setFragmentSize(int fragmentSize){
+	public SubscriptionRequestMsg setFragmentSize(Integer fragmentSize){
 		this.setKeyValue("fragment_size", fragmentSize);
 		return this;
 	}
 
-	public SubscriptionRequestMsg setCompression(String compression){
-		this.setKeyValue("compression", compression);
-		return this;
-	}
 
 	public SubscriptionRequestMsg setId(String id){
 		this.setKeyValue("id", id);
@@ -80,14 +84,15 @@ public class SubscriptionRequestMsg {
 		return (Integer)this.keyValues.get("fragment_size");
 	}
 
-	public String getCompression(){
-		return (String)this.keyValues.get("compression");
-	}
 
 	public String getId(){
 		return (String)this.keyValues.get("id");
 	}
 
+	/**
+	 * Generates the JSON string for this subscription request.
+	 * @return the JSON string for this subscription request.
+	 */
 	public String generateJsonString(){
 		ObjectMapper mapper = new ObjectMapper();
 		String jsonString = null;

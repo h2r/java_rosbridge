@@ -24,23 +24,24 @@ import java.util.concurrent.TimeUnit;
 /**
  *
  * A socket for connecting to ros bridge that accepts subscribe and publish commands.
- * Subscribing to a topic using the {@link #subscribe(String, String, RosListenDelegate)}} method
- * requires a provided {@link ros.RosListenDelegate} to be provided
- * which will be informed every time this socket receives a message from a publish
- * to the subscribed topic. The message type in this method may be left null to perform
- * type inference, but subscription will fail with Rosbridge when the type is null IF the topic
- * does not already exist. You may also use the {@link #subscribe(String, String, RosListenDelegate, int, int)}
- * method to set a queue size and throttle rate. For fast data, you should set the throttle rate and queue size to 1,
- * or increasing lag may occur.
- * <br/>
+ * Subscribing to a topic using the {@link #subscribe(SubscriptionRequestMsg, RosListenDelegate)}.
+ * The input {@link SubscriptionRequestMsg} allows you to iteratively build all the optional fields
+ * you can set to detail the subscription, such as whether the messages should be fragmented in size,
+ * the queue length, throttle rate, etc. If data is pushed quickly, it is recommended that you
+ * set the throttle rate and queue length to 1 or you may observe increasing latency in the messages.
+ * Png compression is currently not supported. If the message type
+ * is not set, and the topic either does not exist or you have never subscribed to that topic previously,
+ * Rosbridge may fail to subscribe. There are also additional methods for subscribing that take the parameters
+ * of a subscription as arguments to the method.
+ * <br/><br/>
  * Publishing is also supported with the {@link #publish(String, String, Object)} method, but you should
  * consider using the {@link ros.Publisher} class wrapper for streamlining publishing.
- * <br/>
+ * <br/><br/>
  * To create and connect to rosbridge, you can either instantiate with the default constructor
  * and then call {@link #connect(String)} or use the static method {@link #createConnection(String)} which
  * creates a RosBridge instance and then connects.
  * An example URI to provide as a parameter is: ws://localhost:9090, where 9090 is the default Rosbridge server port.
- * <br/>
+ * <br/><br/>
  * If you need to handle messages with larger sizes, you should subclass RosBridge and annotate the class
  * with {@link WebSocket} with the parameter maxTextMessageSize set to the desired buffer size. For example:
  * <br/>
