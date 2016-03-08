@@ -77,11 +77,13 @@ public class RosTest {
 			System.exit(0);
 		}
 
-		RosBridge bridge = RosBridge.createConnection(args[0]);
-		bridge.waitForConnection();
+		RosBridge bridge = new RosBridge();
+		bridge.connect(args[0], true);
 
-
-		bridge.subscribe("/ros_to_java", "std_msgs/String",
+		bridge.subscribe(SubscriptionRequestMsg.generate("/ros_to_java")
+					.setType("std_msgs/String")
+					.setThrottleRate(1)
+					.setQueueLength(1),
 				new RosListenDelegate() {
 					@Override
 					public void receive(JsonNode data, String stringRep) {
@@ -89,7 +91,8 @@ public class RosTest {
 						PrimitiveMsg<String> msg = unpacker.unpackRosMessage(data);
 						System.out.println(msg.data);
 					}
-				}, 1, 1);
+				}
+		);
 
 
 
@@ -138,7 +141,7 @@ The message object you pass the publish method can either be a [Java Bean](https
 `java_rosbridge` includes some Java Bean data structures for common ROS messages in the `msgs` package. For example, the `PrimitiveMsg` is a Java Bean that can be used for many of the primitive ROS message types found in the `std_msgs` ROS package by setting its generic type to the appropriate primitive. For example, `PrimitiveMsg<String>` can be used for the `std_msgs/String` message. Alternatively, if you wanted to recreate the `std_msgs/String` message with a Java Map, the Map should contain one key-value entry of `data: stringValue`, where `stringValue` is whatever the ROS `std_msgs/String` data field value is.
 
 ####Subcribe
-You can subscribe to ROS topics via the `subscribe(String topic, String type, RosListenDelegate delegate)` or `subscribe(String topic, String type, RosListenDelegate delegate, int throttleRate, int queueLength)` method of the `RosBridge` class, which take a `RosListenDelegate` object as an argument (an interface defined in the `ros` package) which is a callback object that is passed the data sent from ROS Bridge for the specific topic to which you subscribed. You will need to implement your own `RosListenDelegate` object to process the received data, similar to how in normal Python ROS you implement a callback function to process subscriptions.
+You can subscribe to ROS topics via the `subscribe(SubscriptionRequestMsg request, RosListenDelegate delegate)` method (other variants of this method also exist). The SubscriptionRequestMsg object is a class for easily specifying the various optional fields you wish to include in the subscription method to manage the network details. The optional fields are message type, throttle_rate, queue_length, and fragment_size. This library currently does not support png compression. The other method argument is a `RosListenDelegate` (an interface defined in the `ros` package) which is a callback object that is passed the data sent from ROS Bridge for the specific topic to which you subscribed. You will need to implement your own `RosListenDelegate` object to process the received data, similar to how in normal Python ROS you implement a callback function to process subscriptions.
 
 **Recommendation**: if you are subscribing to a high frequency topic, you should set the subcribed `throttleRate` and `queueLength` to 1 (or some other small values), otherwise your received data will increasingly lag behind the current real time values.
 
@@ -158,3 +161,14 @@ Alternatively, if you do not have a Java Bean class into which you can trivially
 `double x = data.get("msg").get("linear").get("x").asDouble();`.
 
 If a field's value is an array, it still is returned as a `JsonNode`; however, `JsonNode` has convenient methods for working with it. To get the size of the array use `node.size()` where `node` is the current `JsonNode` element you're using. To get an element within it (also returned as a `JsonNode` for recrusion of non-primitives), use `node.get(i)`, where `i` is the index into the array. See the [JsonNode Java documentation](http://fasterxml.github.io/jackson-databind/javadoc/2.2.0/com/fasterxml/jackson/databind/JsonNode.html) for more information on working with a `JsonNode`.
+
+
+### Large Message Sizes
+
+Some messages you may wish to recieve/send from/to ROS are very large, such as video feeds and they may be larger than the default buffer size that Jetty's websocket uses. One solution to this limitiation is to use fragementation in your subscription request. However, you may also increase your web socket message size buffer so that you do not need to use fragementation. Since we use Jetty for managing the websocket network, increasing the web socket buffer size is accomplished by subclassing the RosBridge object and annotating it with `@Websocket` with a larger parameter value for the message size. The subclass does not need to override or implement any methods; we extend the class purely to annotate it with a custom web socket buffer size. For example:
+
+```
+@WebSocket(maxTextMessageSize = 500 * 1024) public class BigMessageRosBridge extends RosBridge{}
+```
+
+Then you should instantiate and use your subclass instead of the top-level RosBridge.
