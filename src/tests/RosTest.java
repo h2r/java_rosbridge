@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ros.Publisher;
 import ros.RosBridge;
 import ros.RosListenDelegate;
+import ros.SubscriptionRequestMsg;
 import ros.msgs.std_msgs.PrimitiveMsg;
 import ros.tools.MessageUnpacker;
 
@@ -21,11 +22,13 @@ public class RosTest {
 			System.exit(0);
 		}
 
-		RosBridge bridge = RosBridge.createConnection(args[0]);
-		bridge.waitForConnection();
+		RosBridge bridge = new RosBridge();
+		bridge.connect(args[0], true);
 
-
-		bridge.subscribe("/ros_to_java", "std_msgs/String",
+		bridge.subscribe(SubscriptionRequestMsg.generate("/ros_to_java")
+					.setType("std_msgs/String")
+					.setThrottleRate(1)
+					.setQueueLength(1),
 				new RosListenDelegate() {
 					@Override
 					public void receive(JsonNode data, String stringRep) {
@@ -33,9 +36,8 @@ public class RosTest {
 						PrimitiveMsg<String> msg = unpacker.unpackRosMessage(data);
 						System.out.println(msg.data);
 					}
-				}, 1, 1);
-
-
+				}
+		);
 
 		Publisher pub = new Publisher("/java_to_ros", "std_msgs/String", bridge);
 
