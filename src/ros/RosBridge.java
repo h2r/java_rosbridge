@@ -33,22 +33,22 @@ import java.util.concurrent.TimeUnit;
  * is not set, and the topic either does not exist or you have never subscribed to that topic previously,
  * Rosbridge may fail to subscribe. There are also additional methods for subscribing that take the parameters
  * of a subscription as arguments to the method.
- * <br/><br/>
+ * <p>
  * Publishing is also supported with the {@link #publish(String, String, Object)} method, but you should
  * consider using the {@link ros.Publisher} class wrapper for streamlining publishing.
- * <br/><br/>
+ * <p>
  * To create and connect to rosbridge, you can either instantiate with the default constructor
  * and then call {@link #connect(String)} or use the static method {@link #createConnection(String)} which
  * creates a RosBridge instance and then connects.
  * An example URI to provide as a parameter is: ws://localhost:9090, where 9090 is the default Rosbridge server port.
- * <br/><br/>
+ * <p>
  * If you need to handle messages with larger sizes, you should subclass RosBridge and annotate the class
  * with {@link WebSocket} with the parameter maxTextMessageSize set to the desired buffer size. For example:
- * <br/>
+ * <p>
  * <code>
- *	@WebSocket(maxTextMessageSize = 500 * 1024)  public class BigRosBridge extends RosBridge{  }
+ *	{@literal @}WebSocket(maxTextMessageSize = 500 * 1024)  public class BigRosBridge extends RosBridge{  }
  * </code>
- * <br/>
+ * <p>
  * Note that the subclass does not need to override any methods; subclassing is performed purely to set the
  * buffer size in the annotation value. Then you can instantiate BigRosBridge and call its inherited connect method.
  *

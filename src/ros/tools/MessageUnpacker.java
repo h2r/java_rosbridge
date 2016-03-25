@@ -9,14 +9,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * the actual ros message inside it into a Java bean object. (A Java bean is a Java object that has a default
  * constructor and getter and has either public data members or getter and setter methods for the data members
  * using standard Java naming conventions.)
- * <br/><br/>
+ * <p>
  * To use this class, type the generic to the Java Bean class to which the message will be unpacked and provide
- * the constructor the class of it as well. For example:<br/>
- * <code>MessageUnpacker<Twist> unpacker = new MessageUnpacker<Twist>(Twist.class);</code>. Then provide the
+ * the constructor the class of it as well. For example:<p>
+ * <code>MessageUnpacker&lt;Twist&gt; unpacker = new MessageUnpacker&lt;Twist&gt;(Twist.class);</code>. Then provide the
  * {@link #unpackRosMessage(com.fasterxml.jackson.databind.JsonNode)} method the {@link com.fasterxml.jackson.databind.JsonNode}
  * provided to a {@link ros.RosListenDelegate} to unpack the "msg" field into the Java Bean. This will also work
  * with Java Beans with generics. For example, you can do
- * <code>MessageUnpacker<PrimitiveMsg<String>> unpacker = new MessageUnpacker<PrimitiveMsgs<String>>(PrimitiveMsg.class);</code>.
+ * <code>MessageUnpacker&lt;PrimitiveMsg&lt;String&gt;&gt; unpacker = new MessageUnpacker&lt;PrimitiveMsg&lt;String&gt;&gt;(PrimitiveMsg.class);</code>.
  *
  * @author James MacGlashan.
  */

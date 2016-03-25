@@ -30,7 +30,7 @@ public class RosTest {
 					.setThrottleRate(1)
 					.setQueueLength(1),
 				new RosListenDelegate() {
-					@Override
+
 					public void receive(JsonNode data, String stringRep) {
 						MessageUnpacker<PrimitiveMsg<String>> unpacker = new MessageUnpacker<PrimitiveMsg<String>>(PrimitiveMsg.class);
 						PrimitiveMsg<String> msg = unpacker.unpackRosMessage(data);

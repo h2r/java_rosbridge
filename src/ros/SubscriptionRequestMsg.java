@@ -13,7 +13,7 @@ import java.util.Map;
  * the this object so that you can chain settters on a single line. Use
  * the static {@link #generate(String)} to start the sequence. If a value is set
  * to null, it will be removed from the message.
- * <br/><br/>
+ * <p>
  * When everything is set, the JSON message can be retrieved with the {@link #generateJsonString()}
  * @author James MacGlashan.
  */

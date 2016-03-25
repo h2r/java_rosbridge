@@ -6,14 +6,14 @@ package ros;
  * called on construction and if you use the {@link #Publisher(String, String, RosBridge, boolean)} method
  * and set the advertiseNow flag to false, you still don't *need* to call it, because the first publish will
  * automatically make sure the topic has been advertised first.
- * <br/>
+ * <p>
  * Publish messages using the {@link #publish(Object)} method. It takes an object containing the ROS message
  * to publish. Generally, the msg should either be a Javabean, such as one of the pre-included
  * messages in the {@link ros.msgs} package that has the same field structure as the target topic type
  * or a {@link java.util.Map} object
  * representing the ROS message type structure. For
  * example, if the ROS message type is "std_msgs/String" then msg should be a {@link ros.msgs.std_msgs.PrimitiveMsg}
- * with the generic of String, or a Map<String,String> object
+ * with the generic of String, or a Map object
  * with one Map key-value entry of "data: stringValue" where stringValue is whatever the "std_msgs/String"
  * data field value is.
  * @author James MacGlashan.
@@ -71,13 +71,13 @@ public class Publisher {
 
 
 	/**
-	 * Publishes the message. If this client is not already advertising for this topic, it automatically will first.<br/><br/>
+	 * Publishes the message. If this client is not already advertising for this topic, it automatically will first.<p>
 	 * Generally, the msg should either be a Javabean, such as one of the pre-included
 	 * messages in the {@link ros.msgs} package that has the same field structure as the target topic type
 	 * or a {@link java.util.Map} object
 	 * representing the ROS message type structure. For
 	 * example, if the ROS message type is "std_msgs/String" then msg should be a {@link ros.msgs.std_msgs.PrimitiveMsg}
-	 * with the generic of String, or a Map<String,String> object
+	 * with the generic of String, or a Map object
 	 * with one Map key-value entry of "data: stringValue" where stringValue is whatever the "std_msgs/String"
 	 * data field value is.
 	 * @param msg the message to publish.
