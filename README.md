@@ -5,36 +5,37 @@ A simple library using Jetty 9 to connect Java code to a [ROS Bridge server](htt
 
 ## Compiling
 
+Compiling and usage is now performed with Maven. If you would like to compile with ant, use the ant branch of this repo. However, going forward, updated version of java_rosbridge will require Maven. 
+
+If you do not have Maven installed on your system, get it from https://maven.apache.org/download.cgi
 
 Compile with:
 
 ```
-ant
-```
-Create a jar that you can use with other projects with:
-
-```
-ant dist
+mvn compile
 ```
 
-Alternatively, create a jar that includes the dependencies with 
+Create the target jar and Java doc with
 
 ```
-ant dist_all
+mvn package
 ```
 
-In both cases, the jar files will be stored in the `dist` folder.
-
-Create java doc with:
+Install into your local repo with
 
 ```
-ant doc
+mvn install
 ```
 
-The produced Java doc will be in the `doc` folder.
+Have other projects use java_rosbridge by adding the following to the projects pom.xml `<dependencies>` section:
 
-profit.
-
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>java_rosbridge</artifactId>
+  <version>2.0.0</version>
+</dependency>
+```
 
 ## Using the code
 
