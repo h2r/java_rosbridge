@@ -9,7 +9,7 @@ java_rosbridge is indexed on Maven Central, so if you want to merely use it, all
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>java_rosbridge</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 </dependency>
 ```
 and it will automatically be downloaded. Alternatively, you may compile and install the code directly (or modify as needed), as described in the compiling section of this readme.
@@ -44,7 +44,7 @@ Have other projects use java_rosbridge by adding the following to the projects p
 <dependency>
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>java_rosbridge</artifactId>
-  <version>2.0.0</version>
+  <version>2.0.1</version>
 </dependency>
 ```
 
