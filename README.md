@@ -3,38 +3,50 @@ java_rosbridge
 
 A simple library using Jetty 9 to connect Java code to a [ROS Bridge server](http://wiki.ros.org/rosbridge_suite/). This library supports publishing and subscribing with different topic delegates and makes using Java code with ROS very trivial (we argue that it is easier than using ROSJava which has a number of complications and complexities).
 
+##Linking
+java_rosbridge is indexed on Maven Central, so if you want to merely use it, all you need to do is include in the `<dependencies>` section of your project's pom.xml file:
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>java_rosbridge</artifactId>
+  <version>2.0.0</version>
+</dependency>
+```
+and it will automatically be downloaded. Alternatively, you may compile and install the code directly (or modify as needed), as described in the compiling section of this readme.
+
 ## Compiling
 
+Compiling and usage is now performed with Maven. If you would like to compile with ant, use the ant branch of this repo. However, going forward, updated version of java_rosbridge will require Maven. 
+
+If you do not have Maven installed on your system, get it from https://maven.apache.org/download.cgi
 
 Compile with:
 
 ```
-ant
-```
-Create a jar that you can use with other projects with:
-
-```
-ant dist
+mvn compile
 ```
 
-Alternatively, create a jar that includes the dependencies with 
+Create the target jar and Java doc with
 
 ```
-ant dist_all
+mvn package
 ```
 
-In both cases, the jar files will be stored in the `dist` folder.
-
-Create java doc with:
+Install into your local repo with
 
 ```
-ant doc
+mvn install
 ```
 
-The produced Java doc will be in the `doc` folder.
+Have other projects use java_rosbridge by adding the following to the projects pom.xml `<dependencies>` section:
 
-profit.
-
+```
+<dependency>
+  <groupId>edu.brown.cs.burlap</groupId>
+  <artifactId>java_rosbridge</artifactId>
+  <version>2.0.0</version>
+</dependency>
+```
 
 ## Using the code
 
