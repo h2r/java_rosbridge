@@ -4,7 +4,7 @@
 
   <groupId>edu.brown.cs.burlap</groupId>
   <artifactId>java_rosbridge</artifactId>
-  <version>2.0.1</version>
+  <version>2.0.2</version>
   <packaging>jar</packaging>
 
   <name>java_rosbridge</name>

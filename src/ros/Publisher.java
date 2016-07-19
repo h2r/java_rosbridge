@@ -122,4 +122,12 @@ public class Publisher {
 	public RosBridge getRosBridge() {
 		return rosBridge;
 	}
+
+
+	/**
+	 * Unadvertises that you are publishing to the topic.
+	 */
+	public void unadvertise(){
+		this.rosBridge.unadvertise(this.topic);
+	}
 }

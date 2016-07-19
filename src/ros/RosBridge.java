@@ -179,11 +179,22 @@ public class RosBridge {
 		this.printMessagesAsReceived = printMessagesAsReceived;
 	}
 
+
 	/**
-	 * Use this to close the connection
+	 * Use this method to close the connection. Will automatically unsubscribe and unadvertise from all topics first.
+	 * Call the {@link #awaitClose(int, TimeUnit)} method if you want to block a thread until closing has finished up.
+	 */
+	public void closeConnection(){
+		this.unsubsribeUnAdvertiseAll();
+		this.session.close();
+	}
+
+	/**
+	 * Use this to to wait for a connection to close, or a maximum amount of time.
 	 * @param duration the time in some units until closing.
 	 * @param unit the unit of time in which duration is measured.
-	 * @return the result of the {@link java.util.concurrent.CountDownLatch#await()} method.
+	 * @return the result of the {@link java.util.concurrent.CountDownLatch#await()} method. true if closing happened;
+	 *  false if time ran out.
 	 * @throws InterruptedException
 	 */
 	public boolean awaitClose(int duration, TimeUnit unit) throws InterruptedException {
@@ -384,6 +395,58 @@ public class RosBridge {
 		this.listeners.remove(topic);
 	}
 
+
+	/**
+	 * Unsubscribes from all topics.
+	 */
+	public void unsubscribeAll(){
+		for(String topic : this.listeners.keySet()){
+			this.unsubscribe(topic);
+		}
+	}
+
+
+	/**
+	 * "Unadvertises" that you are publishing to a topic.
+	 * @param topic the topic to unadvertise
+	 */
+	public void unadvertise(String topic){
+
+		String usMsg = "{" +
+				"\"op\": \"unadvertise\",\n" +
+				"\"topic\": \"" + topic + "\"\n" +
+				"}";
+
+		Future<Void> fut;
+		try{
+			fut = session.getRemote().sendStringByFuture(usMsg);
+			fut.get(2, TimeUnit.SECONDS);
+			this.publishedTopics.add(topic);
+		}catch (Throwable t){
+			System.out.println("Error in sending unsubscribe message for " + topic);
+			t.printStackTrace();
+		}
+
+		this.publishedTopics.remove(topic);
+
+	}
+
+	/**
+	 * Unadvertises for all topics currently being published to.
+	 */
+	public void unadvertiseAll(){
+		for(String topic : this.publishedTopics){
+			this.unadvertise(topic);
+		}
+	}
+
+	/**
+	 * Unadvertises and unsubscribes from all topics.
+	 */
+	public void unsubsribeUnAdvertiseAll(){
+		this.unadvertiseAll();
+		this.unsubscribeAll();
+	}
 
 	/**
 	 * Publishes to a topic. If the topic has not already been advertised on ros, it will automatically do so.
