@@ -295,6 +295,10 @@ public class RosBridge {
 	 */
 	public void subscribe(SubscriptionRequestMsg request, RosListenDelegate delegate){
 
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot subscribe.");
+		}
+
 		String topic = request.getTopic();
 
 		//already have a subscription? just update delegate
@@ -347,6 +351,10 @@ public class RosBridge {
 	 */
 	public void advertise(String topic, String type){
 
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot advertise. Attempted Topic advertising: " + topic);
+		}
+
 		if(!this.publishedTopics.contains(topic)){
 
 			//then start advertising first
@@ -377,6 +385,11 @@ public class RosBridge {
 	 * @param topic the topic from which to unsubscribe.
 	 */
 	public void unsubscribe(String topic){
+
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot unsubscribe. Attempted unsubscribe topic: " + topic);
+		}
+
 		String usMsg = "{" +
 				"\"op\": \"unsubscribe\",\n" +
 				"\"topic\": \"" + topic + "\"\n" +
@@ -400,7 +413,8 @@ public class RosBridge {
 	 * Unsubscribes from all topics.
 	 */
 	public void unsubscribeAll(){
-		for(String topic : this.listeners.keySet()){
+		List<String> curTopics = new ArrayList<String>(this.listeners.keySet());
+		for(String topic : curTopics){
 			this.unsubscribe(topic);
 		}
 	}
@@ -411,6 +425,10 @@ public class RosBridge {
 	 * @param topic the topic to unadvertise
 	 */
 	public void unadvertise(String topic){
+
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot unadvertise. Attempted unadvertise topic: " + topic);
+		}
 
 		String usMsg = "{" +
 				"\"op\": \"unadvertise\",\n" +
@@ -435,7 +453,8 @@ public class RosBridge {
 	 * Unadvertises for all topics currently being published to.
 	 */
 	public void unadvertiseAll(){
-		for(String topic : this.publishedTopics){
+		List<String> curPublishedTopics = new ArrayList<String>(this.publishedTopics);
+		for(String topic : curPublishedTopics){
 			this.unadvertise(topic);
 		}
 	}
@@ -455,6 +474,10 @@ public class RosBridge {
 	 * @param msg should be a {@link java.util.Map} or a Java Bean, specifying the ROS message
 	 */
 	public void publish(String topic, String type, Object msg){
+
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot publish. Attempted Topic Publish: " + topic);
+		}
 
 		this.advertise(topic, type);
 
@@ -498,6 +521,10 @@ public class RosBridge {
 	 */
 	public void publishJsonMsg(String topic, String type, String jsonMsg){
 
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot publish. Attempted Topic Publish: " + topic);
+		}
+
 		this.advertise(topic, type);
 
 		String fullMsg = "{\"op\": \"publish\", \"topic\": \"" + topic + "\", \"type\": \"" + type + "\", " +
@@ -523,6 +550,10 @@ public class RosBridge {
 	 * @param message the message to send to Rosbridge.
 	 */
 	public void sendRawMessage(String message){
+
+		if(this.session == null){
+			throw new RuntimeException("Rosbridge connection is closed. Cannot send message.");
+		}
 
 		Future<Void> fut;
 		try{
