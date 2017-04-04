@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URI;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -60,7 +62,7 @@ public class RosBridge {
 	protected final CountDownLatch closeLatch;
 	protected Session session;
 
-	protected Map<String, RosBridgeSubscriber> listeners = new HashMap<String, RosBridgeSubscriber>();
+	protected Map<String, RosBridgeSubscriber> listeners = new ConcurrentHashMap<String, RosBridge.RosBridgeSubscriber>();
 	protected Set<String> publishedTopics = new HashSet<String>();
 
 	protected Map<String, FragmentManager> fragementManagers = new HashMap<String, FragmentManager>();
@@ -302,13 +304,16 @@ public class RosBridge {
 		String topic = request.getTopic();
 
 		//already have a subscription? just update delegate
-		if(this.listeners.containsKey(topic)){
-			this.listeners.get(topic).addDelegate(delegate);
-			return;
-		}
+		synchronized(this.listeners){
+			RosBridgeSubscriber subscriber = this.listeners.get(topic);
+			if(subscriber!=null){
+				subscriber.addDelegate(delegate);
+				return;
+			}
 
-		//otherwise setup the subscription and delegate
-		this.listeners.put(topic, new RosBridgeSubscriber(delegate));
+			//otherwise setup the subscription and delegate
+			this.listeners.put(topic, new RosBridgeSubscriber(delegate));
+		}
 
 		String subMsg = request.generateJsonString();
 		Future<Void> fut;
@@ -355,7 +360,13 @@ public class RosBridge {
 			throw new RuntimeException("Rosbridge connection is closed. Cannot advertise. Attempted Topic advertising: " + topic);
 		}
 
-		if(!this.publishedTopics.contains(topic)){
+		boolean advertised = false;
+		synchronized(this.publishedTopics){
+			advertised = this.publishedTopics.contains(topic);
+			if (!advertised)
+				this.publishedTopics.add(topic);
+		}
+		if(!advertised){
 
 			//then start advertising first
 			String adMsg = "{" +
@@ -368,8 +379,8 @@ public class RosBridge {
 			try{
 				fut = session.getRemote().sendStringByFuture(adMsg);
 				fut.get(2, TimeUnit.SECONDS);
-				this.publishedTopics.add(topic);
 			}catch (Throwable t){
+				this.publishedTopics.remove(topic);
 				System.out.println("Error in setting up advertisement to " + topic + " with message type: " + type);
 				t.printStackTrace();
 			}
@@ -399,7 +410,6 @@ public class RosBridge {
 		try{
 			fut = session.getRemote().sendStringByFuture(usMsg);
 			fut.get(2, TimeUnit.SECONDS);
-			this.publishedTopics.add(topic);
 		}catch (Throwable t){
 			System.out.println("Error in sending unsubscribe message for " + topic);
 			t.printStackTrace();
@@ -439,13 +449,14 @@ public class RosBridge {
 		try{
 			fut = session.getRemote().sendStringByFuture(usMsg);
 			fut.get(2, TimeUnit.SECONDS);
-			this.publishedTopics.add(topic);
 		}catch (Throwable t){
 			System.out.println("Error in sending unsubscribe message for " + topic);
 			t.printStackTrace();
 		}
 
-		this.publishedTopics.remove(topic);
+		synchronized(this.publishedTopics){
+			this.publishedTopics.remove(topic);
+		}
 
 	}
 
@@ -453,7 +464,10 @@ public class RosBridge {
 	 * Unadvertises for all topics currently being published to.
 	 */
 	public void unadvertiseAll(){
-		List<String> curPublishedTopics = new ArrayList<String>(this.publishedTopics);
+		List<String> curPublishedTopics;
+		synchronized(this.publishedTopics){
+			curPublishedTopics = new ArrayList<String>(this.publishedTopics);
+		}
 		for(String topic : curPublishedTopics){
 			this.unadvertise(topic);
 		}
@@ -601,16 +615,26 @@ public class RosBridge {
 
 	protected void processFragment(JsonNode node){
 		String id = node.get("id").textValue();
-		FragmentManager manager = this.fragementManagers.get(id);
-		if(manager == null){
-			manager = new FragmentManager(node);
-			this.fragementManagers.put(id, manager);
+		FragmentManager manager;
+		boolean complete = false;
+		String fullMsg = null;
+		synchronized(this.fragementManagers){
+			manager = this.fragementManagers.get(id);
+			if(manager == null){
+				manager = new FragmentManager(node);
+				this.fragementManagers.put(id, manager);
+			}
 		}
-		boolean complete = manager.updateFragment(node);
+		synchronized(manager){
+			complete = manager.updateFragment(node);
+			if(complete)
+				fullMsg = manager.generateFullMessage();
+		}
 
 		if(complete){
-			String fullMsg = manager.generateFullMessage();
-			this.fragementManagers.remove(id);
+			synchronized(this.fragementManagers){
+				this.fragementManagers.remove(id);
+			}
 			this.onMessage(fullMsg);
 		}
 
@@ -623,7 +647,7 @@ public class RosBridge {
 	 */
 	public static class RosBridgeSubscriber{
 
-		protected List<RosListenDelegate> delegates = new ArrayList<RosListenDelegate>();
+		protected List<RosListenDelegate> delegates = new CopyOnWriteArrayList<RosListenDelegate>();
 
 		public RosBridgeSubscriber() {
 		}
