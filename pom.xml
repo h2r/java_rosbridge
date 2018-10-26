@@ -20,6 +20,11 @@
       <url>http://www.gnu.org/licenses/lgpl-3.0.en.html</url>
     </license>
   </licenses>
+  
+  <properties>
+     <maven.compiler.source>1.8</maven.compiler.source>
+     <maven.compiler.target>1.8</maven.compiler.target>
+  </properties>
 
    <developers>
     <developer>
