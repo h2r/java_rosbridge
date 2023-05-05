@@ -11,6 +11,12 @@
   <description>
     This is a library for subscribing/publishing to topics on ros through ros_bridge. It contains both high-level and low-level message control. The websocket server is implement with Jetty. 
   </description>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+  </properties>
 
    <url>https://github.com/h2r/java_rosbridge</url>
 
